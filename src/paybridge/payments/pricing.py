@@ -24,7 +24,11 @@ contribution_margin = total_customer_cost - platform_direct_cost
 """
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import asdict, dataclass
+
+import numpy as np
+import pandas as pd
 
 from paybridge.config import (
     CORRIDOR_BY_CODE,
@@ -249,3 +253,52 @@ def savings_vs_swift(
             "eligible": float(quote.eligible),
         }
     return out
+
+
+# --------------------------------------------------------------------------
+# Vectorised pricing (analytics / counterfactual use)
+# --------------------------------------------------------------------------
+def cost_components_vectorized(
+    rail_code: str,
+    amounts: Sequence[float] | np.ndarray,
+    corridor_codes: Sequence[str],
+) -> pd.DataFrame:
+    """Vectorised equivalent of :func:`quote_payment` cost components.
+
+    Used for portfolio-level analytics and counterfactual rail comparisons over
+    tens of thousands of rows. Validated against ``quote_payment`` in the test
+    suite so the two implementations cannot drift.
+    """
+    if rail_code not in RAIL_BY_CODE:
+        raise KeyError(f"Unknown payment rail: {rail_code}")
+    rail = RAIL_BY_CODE[rail_code]
+    amt = np.asarray(amounts, dtype=float)
+    codes = pd.Series(list(corridor_codes), dtype="object")
+
+    hops = codes.map({c.code: c.swift_hops for c in CORRIDORS}).astype(float).to_numpy()
+    partner = codes.map({c.code: c.partner_payout_fee_usd for c in CORRIDORS}).astype(float).to_numpy()
+    spread = codes.map({c.code: c.fx_wholesale_spread_bps for c in CORRIDORS}).astype(float).to_numpy()
+
+    fixed_fee = np.full(amt.shape, rail.customer_fixed_fee_usd, dtype=float)
+    variable_fee = amt * rail.customer_variable_pct
+    fx_markup_cost = amt * rail.customer_fx_markup_bps / BPS
+    lifting = hops * SWIFT_LIFTING_FEE_PER_HOP_USD if rail.code == "SWIFT" else np.zeros_like(amt)
+    total = fixed_fee + variable_fee + fx_markup_cost + lifting
+
+    provider_fixed = np.full(amt.shape, rail.provider_fixed_cost_usd, dtype=float)
+    provider_variable = amt * rail.provider_variable_pct
+    partner_cost = partner * RAIL_PARTNER_COST_FACTOR[rail.code]
+    fx_spread_cost = amt * spread / BPS
+    direct = provider_fixed + provider_variable + partner_cost + fx_spread_cost + lifting
+
+    return pd.DataFrame(
+        {
+            "fixed_fee": fixed_fee,
+            "variable_fee": variable_fee,
+            "fx_markup_cost": fx_markup_cost,
+            "lifting_fees": lifting,
+            "total_customer_cost": total,
+            "platform_direct_cost": direct,
+            "contribution_margin": total - direct,
+        }
+    )

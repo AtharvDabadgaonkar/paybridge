@@ -74,19 +74,23 @@ _HOUR_WEIGHTS = np.array(
 _HOUR_WEIGHTS = _HOUR_WEIGHTS / _HOUR_WEIGHTS.sum()
 
 # Latent fraud model coefficients (synthetic ground truth).
+# Coefficients are deliberately strong: fraud in this simulation is rare but
+# CONCENTRATED in an identifiable behavioural subpopulation. Real payment
+# fraud is noisier, so measured performance here is an optimistic upper bound
+# (see docs/MODEL_CARD.md, "Limitations").
 FRAUD_COEFFICIENTS = {
     "intercept": -5.20,
-    "new_beneficiary_3d": 1.40,
-    "new_beneficiary_large": 0.95,
-    "velocity": 0.85,
-    "young_account": 0.90,
-    "amount_deviation": 1.15,
-    "odd_hour": 0.70,
-    "corridor_risk": 1.00,
-    "recent_failures": 0.80,
-    "structuring": 0.90,
-    "details_changed": 0.65,
-    "noise_sd": 0.40,
+    "new_beneficiary_3d": 2.60,
+    "new_beneficiary_large": 1.80,
+    "velocity": 1.80,
+    "young_account": 1.50,
+    "amount_deviation": 2.20,
+    "odd_hour": 1.00,
+    "corridor_risk": 1.60,
+    "recent_failures": 1.60,
+    "structuring": 1.80,
+    "details_changed": 1.20,
+    "noise_sd": 0.30,
 }
 
 COMPROMISE_EPISODE_SHARE = 0.045   # share of businesses with an ATO-style episode
@@ -584,26 +588,32 @@ def _generate_compliance_cases(
 # --------------------------------------------------------------------------
 # Product analytics events
 # --------------------------------------------------------------------------
+# (event name, relative frequency, share of businesses that ever adopt it).
+# Adoption probabilities create a realistic feature funnel instead of every
+# customer using every capability.
 _EVENT_CATALOG = (
-    ("dashboard_viewed", 0.26),
-    ("payout_created", 0.18),
-    ("rail_comparison_viewed", 0.14),
-    ("fraud_alert_viewed", 0.11),
-    ("investigation_opened", 0.07),
-    ("investigation_decided", 0.06),
-    ("copilot_query", 0.06),
-    ("report_exported", 0.05),
-    ("compliance_case_reviewed", 0.04),
-    ("experiment_enrolled", 0.03),
+    ("dashboard_viewed", 0.26, 0.97),
+    ("payout_created", 0.18, 0.93),
+    ("rail_comparison_viewed", 0.14, 0.68),
+    ("fraud_alert_viewed", 0.11, 0.44),
+    ("investigation_opened", 0.07, 0.29),
+    ("investigation_decided", 0.06, 0.24),
+    ("copilot_query", 0.06, 0.21),
+    ("report_exported", 0.05, 0.36),
+    ("compliance_case_reviewed", 0.04, 0.31),
+    ("experiment_enrolled", 0.03, 0.14),
 )
+
+# Share of businesses that go quiet partway through the window.
+CHURN_SHARE = 0.18
 
 
 def _generate_product_events(
     rng: np.random.Generator, businesses: pd.DataFrame, start: datetime, end: datetime
 ) -> pd.DataFrame:
     names = [e[0] for e in _EVENT_CATALOG]
-    weights = np.array([e[1] for e in _EVENT_CATALOG])
-    weights = weights / weights.sum()
+    base_weights = np.array([e[1] for e in _EVENT_CATALOG])
+    adoption = np.array([e[2] for e in _EVENT_CATALOG])
 
     rows: list[dict] = []
     counter = 0
@@ -642,12 +652,25 @@ def _generate_product_events(
                 }
             )
 
+        # Per-business feature affinity: enterprise accounts adopt more widely.
+        tier_lift = {"small": 0.85, "mid": 1.0, "enterprise": 1.25}[biz.volume_tier]
+        enabled = rng.random(len(names)) < np.clip(adoption * tier_lift, 0.0, 0.99)
+        if not enabled.any():
+            enabled[0] = True
+        weights = base_weights * enabled
+        weights = weights / weights.sum()
+
+        # Churn: a share of businesses go quiet partway through the window.
+        effective_days = active_days
+        if rng.random() < CHURN_SHARE:
+            effective_days = max(active_days * float(rng.uniform(0.25, 0.8)), 1.0)
+
         intensity = {"small": 20.0, "mid": 55.0, "enterprise": 130.0}[biz.volume_tier]
-        n_events = int(rng.poisson(intensity * min(active_days, 90) / 30.0))
+        n_events = int(rng.poisson(intensity * min(effective_days, 90) / 30.0))
         if n_events <= 0:
             continue
         ev_names = rng.choice(names, size=n_events, p=weights)
-        offsets = rng.random(n_events) * active_days
+        offsets = rng.random(n_events) * effective_days
         for name, off in zip(ev_names, offsets):
             counter += 1
             user = users[int(rng.integers(0, n_users))]

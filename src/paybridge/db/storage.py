@@ -246,11 +246,44 @@ def execute(sql: str, params: Iterable[Any] = (), path: Path | str | None = None
         return cur.rowcount
 
 
-def insert_row(table: str, row: Mapping[str, Any], path: Path | str | None = None) -> None:
+def insert_row(
+    table: str,
+    row: Mapping[str, Any],
+    path: Path | str | None = None,
+    on_conflict: str = "replace",
+) -> None:
+    """Insert one row. ``on_conflict='ignore'`` preserves existing user edits
+    and is what seeding uses so a reseed never overwrites a user's changes."""
+    if on_conflict not in {"replace", "ignore", "abort"}:
+        raise ValueError("on_conflict must be 'replace', 'ignore' or 'abort'")
+    verb = {"replace": "INSERT OR REPLACE", "ignore": "INSERT OR IGNORE", "abort": "INSERT"}[on_conflict]
     cols = ",".join(row.keys())
     marks = ",".join("?" for _ in row)
     with connect(path) as conn:
-        conn.execute(f"INSERT OR REPLACE INTO {table} ({cols}) VALUES ({marks})", tuple(row.values()))
+        conn.execute(f"{verb} INTO {table} ({cols}) VALUES ({marks})", tuple(row.values()))
+
+
+def insert_rows(
+    table: str,
+    rows: Iterable[Mapping[str, Any]],
+    path: Path | str | None = None,
+    on_conflict: str = "replace",
+) -> int:
+    """Batch insert in a single transaction. Returns the number of rows sent."""
+    rows = list(rows)
+    if not rows:
+        return 0
+    if on_conflict not in {"replace", "ignore", "abort"}:
+        raise ValueError("on_conflict must be 'replace', 'ignore' or 'abort'")
+    verb = {"replace": "INSERT OR REPLACE", "ignore": "INSERT OR IGNORE", "abort": "INSERT"}[on_conflict]
+    cols = list(rows[0].keys())
+    marks = ",".join("?" for _ in cols)
+    with connect(path) as conn:
+        conn.executemany(
+            f"{verb} INTO {table} ({','.join(cols)}) VALUES ({marks})",
+            [tuple(r[c] for c in cols) for r in rows],
+        )
+    return len(rows)
 
 
 def log_audit(
