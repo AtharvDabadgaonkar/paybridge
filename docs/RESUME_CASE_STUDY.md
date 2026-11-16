@@ -79,7 +79,7 @@ payment decisions changed, 100% evidence-trail completeness, 2.1% false-positive
 volume, ~18 ms p95 in-process scoring latency — **and recall at 0.47 against a 0.60 target, reported
 as a blocking gate rather than waived.**
 
-**Quality assurance:** 251 automated tests passing, covering data reproducibility, financial
+**Quality assurance:** 262 automated tests passing, covering data reproducibility, financial
 calculations, workflow state machines, leakage controls, threshold tuning, explainability fallbacks,
 copilot grounding and injection handling, program logic and end-to-end flows, plus a render test for
 every page.
@@ -145,6 +145,6 @@ every page.
 
 > Designed an **explainable fraud engine and a grounded LLM copilot** that computes every metric
 > deterministically in Python and **validates all generated numeric claims against an evidence
-> allowlist**, rejecting unsupported output; delivered with **251 passing automated tests**, CI, a
+> allowlist**, rejecting unsupported output; delivered with **262 passing automated tests**, CI, a
 > leakage-controlled chronological training pipeline, and full functionality with **no paid API
 > credentials**.

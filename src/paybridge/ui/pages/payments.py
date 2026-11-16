@@ -192,7 +192,8 @@ def _tab_create(transactions: pd.DataFrame, businesses: pd.DataFrame) -> None:
     if not can_create:
         C.notice("The selected rail is not eligible for this amount or corridor.", "danger", "⚠️")
 
-    if st.button("Create simulated payout", type="primary", disabled=not can_create):
+    if st.button("Create simulated payout", type="primary", disabled=not can_create,
+                 key="po_create"):
         record = payout_service.create_payout(
             business_id=business_id,
             recipient_country=corridor.recipient_country,

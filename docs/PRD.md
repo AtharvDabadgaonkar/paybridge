@@ -131,7 +131,7 @@ mobile clients; FX hedging; chargeback/dispute handling; production model monito
 | NFR-04 | Degrade gracefully when optional dependencies are missing | Delivered (SHAP, Anthropic SDK) |
 | NFR-05 | Secrets via environment variables only; none committed | Delivered |
 | NFR-06 | Scoring latency acceptable for interactive use | Delivered: p95 ≈ 18 ms in process (not load tested) |
-| NFR-07 | Automated tests covering data, finance, workflow, ML and AI safety | Delivered: 251 tests |
+| NFR-07 | Automated tests covering data, finance, workflow, ML and AI safety | Delivered: 262 tests |
 | NFR-08 | Synthetic and modelled figures labelled wherever displayed | Delivered |
 | NFR-09 | Demo reset restores a clean state | Delivered |
 | NFR-10 | Storage limitations documented, not overstated | Delivered |

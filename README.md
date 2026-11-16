@@ -90,7 +90,7 @@ metrics measured on the untouched test split.
 100% evidence-trail completeness, 2.1% FPR, 2.6% review volume, ~18 ms p95 in-process latency — and
 **recall 0.47 against a 0.60 target, reported as a blocking gate rather than waived.**
 
-**Quality assurance:** 251 automated tests passing (data quality, financial maths, workflow state
+**Quality assurance:** 262 automated tests passing (data quality, financial maths, workflow state
 machines, leakage controls, threshold tuning, explainability, copilot grounding and prompt
 injection, program logic, end-to-end flows, and a render test for all 10 pages).
 
@@ -111,7 +111,7 @@ src/paybridge/
   product/                   adoption metrics, experiment design
   ui/                        theme, components, filters, services, 10 page modules
 scripts/                     generate_data.py · train_model.py · report.py
-tests/                       251 tests across 11 modules
+tests/                       262 tests across 13 modules
 docs/                        PRD · roadmap · program plan · architecture · API spec ·
                              unit economics · model card · AI safety · case study
 ```

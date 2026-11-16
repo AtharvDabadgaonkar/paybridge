@@ -21,6 +21,7 @@ data/*.db
 data/*.db-wal
 data/*.db-shm
 data/dataset_manifest.json
+data/qa_results.json
 models/*.joblib
 models/*.json
 
