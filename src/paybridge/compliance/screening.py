@@ -106,7 +106,9 @@ def classify_onboarding_risk(
         score += 1
         reasons.append(f"{high_risk_corridors} elevated-risk destination corridor(s) declared")
 
-    classification = "high" if score >= 4 else "medium" if score >= 2 else "low"
+    # Two watchlist hits, or incomplete ownership evidence on a larger account,
+    # is enough to classify high risk.
+    classification = "high" if score >= 3 else "medium" if score >= 2 else "low"
     if not reasons:
         reasons.append("No screening match, complete documentation and standard volume profile")
     return classification, reasons

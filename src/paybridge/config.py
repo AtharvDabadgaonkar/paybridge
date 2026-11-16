@@ -234,6 +234,14 @@ def anthropic_api_key() -> str | None:
     key = os.getenv("ANTHROPIC_API_KEY")
     if key and key.strip():
         return key.strip()
+    # Only touch st.secrets when a secrets file actually exists: reading it
+    # otherwise makes Streamlit render a "No secrets found" error in the UI.
+    secret_paths = (
+        PROJECT_ROOT / ".streamlit" / "secrets.toml",
+        Path.home() / ".streamlit" / "secrets.toml",
+    )
+    if not any(p.exists() for p in secret_paths):
+        return None
     try:  # pragma: no cover - depends on a running Streamlit runtime
         import streamlit as st
 

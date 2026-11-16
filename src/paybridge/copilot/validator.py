@@ -19,7 +19,7 @@ from paybridge.copilot.evidence import EvidencePack
 # Numbers the copilot may use without evidence: small integers that are almost
 # always enumerations ("1)", "three checks"), and the digits inside identifiers
 # (which are stripped before parsing).
-SMALL_INT_ALLOWANCE = 10
+SMALL_INT_ALLOWANCE = 10   # bare integers only; never money or percentages
 RELATIVE_TOLERANCE = 0.015
 ABSOLUTE_TOLERANCE = 0.01
 
@@ -119,14 +119,35 @@ def allowed_values(pack: EvidencePack) -> list[float]:
     return base + derived
 
 
+def monetary_values(pack: EvidencePack) -> list[float]:
+    """Values the pack states as money or percentages.
+
+    A claim such as "$0.00" or "0%" must be backed by a monetary or percentage
+    fact, not by an unrelated zero count sitting in a table.
+    """
+    return [f.numeric for f in pack.facts if f.unit in {"usd", "pct"} and f.numeric is not None]
+
+
 def validate_numbers(text: str, pack: EvidencePack) -> tuple[list[NumericClaim], list[NumericClaim]]:
     allowed = allowed_values(pack)
+    monetary = monetary_values(pack)
     claims: list[NumericClaim] = []
     unsupported: list[NumericClaim] = []
     for raw, value in extract_numbers(text):
-        if float(value).is_integer() and abs(value) <= SMALL_INT_ALLOWANCE:
-            continue                       # enumerations and ordinals
-        matched = _matches(value, allowed)
+        # A figure written as money or a percentage is always a claim, even when
+        # it is small ("$0.00", "0%"); only bare small integers are treated as
+        # enumerations and ordinals.
+        formatted_as_quantity = any(mark in raw for mark in ("$", "%", ","))
+        if (
+            not formatted_as_quantity
+            and float(value).is_integer()
+            and abs(value) <= SMALL_INT_ALLOWANCE
+        ):
+            continue
+        if value == 0 and formatted_as_quantity:
+            matched = _matches(value, monetary)      # zero money needs zero money evidence
+        else:
+            matched = _matches(value, allowed)
         claim = NumericClaim(raw=raw, value=value, supported=matched is not None, matched_value=matched)
         claims.append(claim)
         if not claim.supported:
