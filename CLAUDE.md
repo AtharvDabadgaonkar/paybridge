@@ -86,6 +86,14 @@ Without make: `.venv/bin/python -m pytest -q`,
 `.venv/bin/streamlit run app.py`, `.venv/bin/python scripts/generate_data.py`,
 `.venv/bin/python scripts/train_model.py`.
 
+## Dependency policy
+
+`requirements.txt` (deployment) uses version RANGES and excludes SHAP so cloud builds resolve fast
+on any recent Python. `requirements-dev.txt` (local + CI) pins exact versions and includes SHAP.
+The suite must pass on BOTH stacks: run it against each before changing either file. UI code must
+therefore stay compatible across Streamlit versions - for example, never pass `height=None` to
+`st.dataframe`, since newer Streamlit rejects it.
+
 ## Conventions
 
 - Python 3.11, 4-space indent, type hints on public functions, docstrings that

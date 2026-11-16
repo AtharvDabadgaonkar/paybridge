@@ -1,12 +1,24 @@
-# PayBridge runtime dependencies
-streamlit==1.40.2
-pandas==2.2.3
-numpy==1.26.4
-plotly==5.24.1
-scikit-learn==1.5.2
-scipy==1.13.1
-shap==0.46.0
-joblib==1.4.2
-pyarrow==17.0.0
-python-dotenv==1.0.1
-anthropic==0.39.0
+# PayBridge - deployment dependencies (Streamlit Community Cloud).
+#
+# Version RANGES, not exact pins, so the build resolves on whichever Python
+# version the host provides (3.11, 3.12 or 3.13) instead of falling back to
+# slow source builds.
+#
+# SHAP is deliberately NOT included here. It pulls numba + llvmlite (~500MB of
+# extra build weight) and is the slowest part of the install. The app detects
+# its absence and falls back to a clearly-labelled deterministic attribution
+# (see fraud/explain.py). To deploy with the full SHAP layer, add:
+#     shap>=0.46,<0.49
+# For local development and CI, use requirements-dev.txt, which pins exact
+# versions and DOES include SHAP.
+
+streamlit>=1.40,<2.0
+pandas>=2.2,<3.0
+numpy>=1.26,<3.0
+plotly>=5.24,<6.0
+scikit-learn>=1.5,<2.0
+scipy>=1.13,<2.0
+joblib>=1.4,<2.0
+pyarrow>=17.0
+python-dotenv>=1.0,<2.0
+anthropic>=0.39,<1.0

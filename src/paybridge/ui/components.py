@@ -139,13 +139,16 @@ def dataframe(
     column_config: Mapping[str, Any] | None = None,
     hide_index: bool = True,
 ) -> None:
-    st.dataframe(
-        df,
-        use_container_width=True,
-        height=height,
-        hide_index=hide_index,
-        column_config=dict(column_config or {}),
-    )
+    # Streamlit >= 1.6x rejects height=None, while older versions accept it;
+    # omitting the kwarg entirely works on both.
+    kwargs: dict[str, Any] = {
+        "use_container_width": True,
+        "hide_index": hide_index,
+        "column_config": dict(column_config or {}),
+    }
+    if height is not None:
+        kwargs["height"] = height
+    st.dataframe(df, **kwargs)
 
 
 def empty_state(message: str, icon: str = "🔍") -> None:

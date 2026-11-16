@@ -126,6 +126,14 @@ docs/                        PRD · roadmap · program plan · architecture · A
    layer. The app runs fully without it.
 5. First boot generates the dataset and trains the model (about a minute), then caches both.
 
+**Two requirement files, on purpose.** `requirements.txt` is the *deployment* set: version ranges so
+the build resolves on whatever Python the host provides, and **no SHAP**, because SHAP pulls numba
+and llvmlite and dominates install time. The app detects SHAP's absence and falls back to a
+clearly-labelled deterministic attribution, so the explainability layer degrades honestly rather
+than breaking. To deploy with full SHAP explanations, add `shap>=0.46,<0.49` to `requirements.txt`
+and expect a noticeably longer build. `requirements-dev.txt` pins exact versions and includes SHAP;
+that is what local development and CI use, and the test suite passes on both stacks.
+
 **Persistence limitation.** Streamlit Community Cloud containers are ephemeral. SQLite state —
 simulated payouts, investigation decisions, compliance decisions, program edits — survives within a
 running container and is lost when the app is rebuilt or recycled. The dataset regenerates
