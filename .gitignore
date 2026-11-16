@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Secrets
+.env
+.streamlit/secrets.toml
+
+# Generated synthetic data and trained models (regenerate with make data / make train)
+data/*.parquet
+data/*.csv
+data/*.db
+data/*.db-wal
+data/*.db-shm
+data/dataset_manifest.json
+models/*.joblib
+models/*.json
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
