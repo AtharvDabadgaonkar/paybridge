@@ -3,6 +3,10 @@
 **Cross-Border Payments Platform with AI Fraud Detection**
 Core engine: **FraudLens AI** · Python · Streamlit · scikit-learn · SHAP · SQLite
 
+
+Live Demo: https://paybridge-cddmzejgfvmqhvvjqy76gw.streamlit.app/
+
+
 > **Independent personal portfolio project.** Not affiliated with, endorsed by or built for any
 > employer, financial institution or payment processor. **All data is synthetic.** No real payment
 > is ever initiated, and no real sanctions, identity or regulatory verification is performed.
