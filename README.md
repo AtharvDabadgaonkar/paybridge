@@ -6,6 +6,10 @@ Core engine: **FraudLens AI** · Python · Streamlit · scikit-learn · SHAP · 
 
 Live Demo: https://paybridge-cddmzejgfvmqhvvjqy76gw.streamlit.app/
 
+> The demo runs on Streamlit Community Cloud's free tier: it sleeps after inactivity, so the first
+> visit takes around 30 seconds to wake and train the fraud model. SHAP is not installed there (see
+> *Deployment* below), so explanations use the labelled deterministic fallback.
+
 
 > **Independent personal portfolio project.** Not affiliated with, endorsed by or built for any
 > employer, financial institution or payment processor. **All data is synthetic.** No real payment
